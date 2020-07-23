@@ -1,10 +1,9 @@
-require 'byebug'
 RSpec.describe Smartcar::Oauth do
   subject { Smartcar::Oauth }
   let(:obj) { double("dummy object for client") }
 
   before do
-    allow(subject).to receive(:get_config).with('SMARTCAR_CALLBACK_URL').and_return("test_url")
+    allow(subject).to receive(:get_config).with('REDIRECT_URI').and_return("test_url")
     allow(subject).to receive_message_chain(:client, :auth_code).and_return(obj)
   end
 

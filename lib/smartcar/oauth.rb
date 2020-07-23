@@ -1,9 +1,8 @@
 module Smartcar
   # Oauth class to take care of the Oauth 2.0 with genomelink APIs
   #
-  # @author [ashwin]
-  #
   class Oauth < Base
+    extend Utils
     class << self
       # Generate the OAuth authorization URL.
       #
@@ -13,26 +12,26 @@ module Smartcar
       # approval_prompt to `force`.
       #
       # @param options [Hash]
-      # @param options[:state] [String] - OAuth state parameter passed to the
+      # @option options[:state] [String] - OAuth state parameter passed to the
       # redirect uri. This parameter may be used for identifying the user who
       # initiated the request.
-      # @param options[:test_mode] [Boolean] - Setting this to 'true' runs it in test mode.
-      # @param options[:force_prompt] [Boolean] - Setting `force_prompt` to
+      # @option options[:test_mode] [Boolean] - Setting this to 'true' runs it in test mode.
+      # @option options[:force_prompt] [Boolean] - Setting `force_prompt` to
       # `true` will show the permissions approval screen on every authentication
       # attempt, even if the user has previously consented to the exact scope of
       # permissions.
-      # @param options[:make] [String] - `make' is an optional parameter that allows
+      # @option options[:make] [String] - `make' is an optional parameter that allows
       # users to bypass the car brand selection screen.
       # For a complete list of supported makes, please see our
       # [API Reference](https://smartcar.com/docs/api#authorization) documentation.
-      # @param options[:scope] [Array of Strings] - array of scopes that specify what the user can access
+      # @option options[:scope] [Array of Strings] - array of scopes that specify what the user can access
       #   EXAMPLE : ['read_odometer', 'read_vehicle_info', 'required:read_location']
       # For further details refer to https://smartcar.com/docs/guides/scope/
       #
       # @return [String] URL where user needs to be redirected for authorization
       def authorization_url(options)
         parameters = {
-          redirect_uri: get_config('SMARTCAR_CALLBACK_URL'),
+          redirect_uri: get_config('REDIRECT_URI'),
           approval_prompt: options[:force_prompt] ? FORCE : AUTO,
           mode: options[:test_mode] ? TEST : LIVE,
           response_type: CODE
@@ -41,12 +40,12 @@ module Smartcar
         %I(state make).each do |parameter|
           parameters[:parameter] = options[:parameter] unless options[:parameter].nil?
         end
-        
+
         client.auth_code.authorize_url(parameters)
       end
 
       # [get_token description]
-      # @param auth_code [String] This is the code that is returned after use 
+      # @param auth_code [String] This is the code that is returned after use r
       # visits and authorizes on the authorization URL.
       #
       # @return [Hash] Hash of token, refresh token, expiry info and token type
@@ -54,7 +53,7 @@ module Smartcar
         client.auth_code
           .get_token(
             auth_code,
-            redirect_uri: get_config('SMARTCAR_CALLBACK_URL')
+            redirect_uri: get_config('REDIRECT_URI')
           ).to_hash
       end
 
@@ -74,19 +73,10 @@ module Smartcar
       #
       # @return [OAuth2::Client] A Oauth Client object.
       def client
-        @client ||= OAuth2::Client.new( get_config('SMARTCAR_CLIENT_ID'),
-          get_config('SMARTCAR_SECRET'),
+        @client ||= OAuth2::Client.new( get_config('CLIENT_ID'),
+          get_config('CLIENT_SECRET'),
           :site => OAUTH_PATH
         )
-      end
-
-      # gets a given env variable, checks for existence and throws exception if not present
-      # @param config_name [String] key of the env variable
-      #
-      # @return [String] value of the env variable
-      def get_config(config_name)
-        raise ConfigNotFound, "Environment variable #{config_name} not found !" unless ENV[config_name]
-        ENV[config_name]
       end
     end
   end
